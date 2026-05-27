@@ -7,4 +7,5 @@ include eddsa/__init__.py
 include eddsa/_eddsa.c
 include eddsa/_eddsa.map
 include eddsa/_eddsa.exports
+recursive-include tools *.py
 recursive-include tests *.py

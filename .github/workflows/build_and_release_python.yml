@@ -19,28 +19,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        compiler: [gcc, clang]
         include:
-          - os: ubuntu
-            python-version: "3.8"
-            compiler: gcc
-          - os: ubuntu
-            python-version: "3.8"
-            compiler: clang
-          - os: ubuntu
-            python-version: "3.9"
-            compiler: gcc
-          - os: ubuntu
-            python-version: "3.10"
-            compiler: gcc
-          - os: ubuntu
-            python-version: "3.11"
-            compiler: gcc
-          - os: ubuntu
-            python-version: "3.12"
-            compiler: gcc
-          - os: ubuntu
-            python-version: "3.13"
-            compiler: gcc
           - os: macos
             python-version: "3.11"
             compiler: clang
@@ -49,6 +31,9 @@ jobs:
             compiler: clang
           - os: macos
             python-version: "3.13"
+            compiler: clang
+          - os: macos
+            python-version: "3.14-dev"
             compiler: clang
           - os: windows
             python-version: "3.11"
@@ -58,6 +43,9 @@ jobs:
             compiler: msvc
           - os: windows
             python-version: "3.13"
+            compiler: msvc
+          - os: windows
+            python-version: "3.14-dev"
             compiler: msvc
 
     steps:
@@ -97,6 +85,44 @@ jobs:
         run: python python/setup.py runctest
         shell: bash
 
+      - name: Run benchmark
+        run: |
+          WHEEL_FILE="$(ls dist/*.whl | head -n 1)"
+          WHEEL_NAME="$(basename "${WHEEL_FILE}")"
+          python python/tools/benchmark.py \
+            --json "benchmark-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}.json" \
+            --target "${{ matrix.os }}" \
+            --compiler "${{ matrix.compiler }}" \
+            --wheel "${WHEEL_NAME}"
+        shell: bash
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}
+          path: benchmark-*.json
+
+  benchmark_summary:
+    name: Benchmark Summary
+    needs: build_test_python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v8
+        with:
+          path: benchmark-results
+          pattern: benchmark-*
+          merge-multiple: true
+
+      - name: Summarize benchmarks
+        run: |
+          python python/tools/benchmark_summary.py 'benchmark-results/*.json' --output benchmark-summary.md
+          cat benchmark-summary.md >> "${GITHUB_STEP_SUMMARY}"
+        shell: bash
+
   build_wheels:
     name: Build Wheels
     needs: build_test_python
@@ -123,7 +149,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel python --output-dir dist
         env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-musllinux_*"
           CIBW_TEST_COMMAND: "python -c \"import eddsa; sec=bytes(range(32)); pub=eddsa.ed25519_genpub(sec); sig=eddsa.ed25519_sign(sec, pub, b'test'); assert eddsa.ed25519_verify(sig, pub, b'test')\""
 
