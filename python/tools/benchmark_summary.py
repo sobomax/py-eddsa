@@ -48,6 +48,23 @@ def format_python_cell(result, c_result, name):
     return f"{format_kps(result, name)} {format_delta_from_c(result, c_result, name)}"
 
 
+def column_label(result):
+    return "<br>".join([
+        html.escape(result.get("target", "")),
+        html.escape(result.get("compiler", "")),
+        html.escape(result.get("python_version", "")),
+        f"<code>{html.escape(wheel_architecture(result))}</code>",
+    ])
+
+
+def c_column_label(result):
+    return "<br>".join([
+        html.escape(result.get("target", "")),
+        html.escape(result.get("compiler", "")),
+        f"runs={result['runs']}",
+    ])
+
+
 def average_group(group):
     averaged = {
         "api": group[0].get("api", "Python"),
@@ -94,68 +111,53 @@ def append_python_table(lines, python_results, c_by_platform):
         "<table>",
         "<thead>",
         "<tr>",
-        "<th>Target</th>",
-        "<th>Compiler</th>",
-        "<th>Python</th>",
-        "<th>Architecture</th>",
+        "<th>Operation</th>",
     ])
-    for _, label in OPERATIONS:
-        lines.append(f"<th>{html.escape(label)}</th>")
+    for result in python_results:
+        lines.append(f"<th>{column_label(result)}</th>")
     lines.extend([
         "</tr>",
         "</thead>",
         "<tbody>",
     ])
 
-    target_groups = []
-    for result in python_results:
-        if not target_groups or target_groups[-1][0] != result.get("target", ""):
-            target_groups.append((result.get("target", ""), []))
-        target_groups[-1][1].append(result)
+    for name, label in OPERATIONS:
+        lines.append("<tr>")
+        lines.append(f"<td>{html.escape(label)}</td>")
+        for result in python_results:
+            c_result = c_by_platform.get((result.get("target", ""), result.get("compiler", "")))
+            lines.append(
+                f'<td align="right"><p>{format_python_cell(result, c_result, name)}</p></td>'
+            )
+        lines.append("</tr>")
 
-    for target, target_rows in target_groups:
-        compiler_groups = []
-        for result in target_rows:
-            if not compiler_groups or compiler_groups[-1][0] != result.get("compiler", ""):
-                compiler_groups.append((result.get("compiler", ""), []))
-            compiler_groups[-1][1].append(result)
+    lines.extend([
+        "</tbody>",
+        "</table>",
+    ])
 
-        target_cell_pending = True
-        for compiler, compiler_rows in compiler_groups:
-            compiler_cell_pending = True
-            c_result = c_by_platform.get((target, compiler))
-            arch_groups = []
-            for result in compiler_rows:
-                arch = wheel_architecture(result)
-                if not arch_groups or arch_groups[-1][0] != arch:
-                    arch_groups.append((arch, []))
-                arch_groups[-1][1].append(result)
 
-            for arch, arch_rows in arch_groups:
-                arch_cell_pending = True
-                for result in arch_rows:
-                    lines.append("<tr>")
-                    if target_cell_pending:
-                        lines.append(
-                            f'<td rowspan="{len(target_rows)}">{html.escape(target)}</td>'
-                        )
-                        target_cell_pending = False
-                    if compiler_cell_pending:
-                        lines.append(
-                            f'<td rowspan="{len(compiler_rows)}">{html.escape(compiler)}</td>'
-                        )
-                        compiler_cell_pending = False
-                    lines.append(f'<td>{html.escape(result.get("python_version", ""))}</td>')
-                    if arch_cell_pending:
-                        lines.append(
-                            f'<td rowspan="{len(arch_rows)}"><code>{html.escape(arch)}</code></td>'
-                        )
-                        arch_cell_pending = False
-                    for name, _ in OPERATIONS:
-                        lines.append(
-                            f'<td align="right"><p>{format_python_cell(result, c_result, name)}</p></td>'
-                        )
-                    lines.append("</tr>")
+def append_c_table(lines, c_results):
+    lines.extend([
+        "<table>",
+        "<thead>",
+        "<tr>",
+        "<th>Operation</th>",
+    ])
+    for result in c_results:
+        lines.append(f"<th>{c_column_label(result)}</th>")
+    lines.extend([
+        "</tr>",
+        "</thead>",
+        "<tbody>",
+    ])
+
+    for name, label in OPERATIONS:
+        lines.append("<tr>")
+        lines.append(f"<td>{html.escape(label)}</td>")
+        for result in c_results:
+            lines.append(f'<td align="right">{format_kps(result, name)}</td>')
+        lines.append("</tr>")
 
     lines.extend([
         "</tbody>",
@@ -218,22 +220,9 @@ def main():
         "",
         "### C API",
         "",
-        "| Target | Compiler | Runs | "
-        + " | ".join(label for _, label in OPERATIONS)
-        + " |",
-        "| --- | --- | ---: | "
-        + " | ".join("---:" for _ in OPERATIONS)
-        + " |",
     ])
 
-    for result in c_results:
-        cells = [
-            result.get("target", ""),
-            result.get("compiler", ""),
-            str(result["runs"]),
-        ]
-        cells.extend(f"{kilo_ops_per_second(result, name):,.1f}" for name, _ in OPERATIONS)
-        lines.append("| " + " | ".join(cells) + " |")
+    append_c_table(lines, c_results)
 
     lines.extend([
         "",
