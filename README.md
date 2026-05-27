@@ -15,3 +15,18 @@ If you need just ed25519-signatures or x25519-key-exchange with a simple API, ho
 - static and dynamic link support
 - easy to use (see wiki)
 - public domain license
+
+### Python bindings
+
+The CPython module is packaged from `python/` and exposes the public libeddsa
+API as byte-oriented functions:
+
+- `ed25519_genpub(sec) -> bytes`
+- `ed25519_sign(sec, pub, data) -> bytes`
+- `ed25519_verify(sig, pub, data) -> bool`
+- `x25519_base(scalar) -> bytes`
+- `x25519(scalar, point) -> bytes`
+- `pk_ed25519_to_x25519(pub) -> bytes`
+- `sk_ed25519_to_x25519(sec) -> bytes`
+
+The obsolete C API names are also provided as compatibility aliases.

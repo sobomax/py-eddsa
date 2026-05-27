@@ -1,0 +1,6 @@
+PYEDDSA_0.8 {
+    global:
+        PyInit__eddsa;
+    local:
+        *;
+};

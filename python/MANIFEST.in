@@ -1,0 +1,10 @@
+include pyproject.toml
+include setup.py
+include MANIFEST.in
+include CMakeLists.txt
+recursive-include build_tools *.py
+include eddsa/__init__.py
+include eddsa/_eddsa.c
+include eddsa/_eddsa.map
+include eddsa/_eddsa.exports
+recursive-include tests *.py
