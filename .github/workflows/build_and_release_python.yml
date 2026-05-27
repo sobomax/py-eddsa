@@ -47,6 +47,9 @@ jobs:
           - os: windows
             python-version: "3.14-dev"
             compiler: msvc
+          - os: windows
+            python-version: "3.13"
+            compiler: clang-cl
 
     steps:
       - uses: actions/checkout@v6
@@ -63,12 +66,12 @@ jobs:
         shell: bash
 
       - name: Build package
-        if: matrix.compiler != 'msvc'
+        if: matrix.compiler != 'msvc' && matrix.compiler != 'clang-cl'
         run: CC=${{ matrix.compiler }} python -m build --sdist --wheel --outdir dist python
         shell: bash
 
       - name: Build package
-        if: matrix.compiler == 'msvc'
+        if: matrix.compiler == 'msvc' || matrix.compiler == 'clang-cl'
         run: python -m build --sdist --wheel --outdir dist python
         shell: bash
 
@@ -90,10 +93,28 @@ jobs:
           WHEEL_FILE="$(ls dist/*.whl | head -n 1)"
           WHEEL_NAME="$(basename "${WHEEL_FILE}")"
           python python/tools/benchmark.py \
-            --json "benchmark-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}.json" \
+            --json "benchmark-python-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}.json" \
             --target "${{ matrix.os }}" \
             --compiler "${{ matrix.compiler }}" \
             --wheel "${WHEEL_NAME}"
+        shell: bash
+
+      - name: Run C benchmark
+        if: matrix.compiler != 'msvc'
+        run: |
+          CC=${{ matrix.compiler }} python python/tools/benchmark_c.py \
+            --json "benchmark-c-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}.json" \
+            --target "${{ matrix.os }}" \
+            --compiler "${{ matrix.compiler }}"
+        shell: bash
+
+      - name: Run C benchmark
+        if: matrix.compiler == 'msvc'
+        run: |
+          python python/tools/benchmark_c.py \
+            --json "benchmark-c-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.python-version }}.json" \
+            --target "${{ matrix.os }}" \
+            --compiler "${{ matrix.compiler }}"
         shell: bash
 
       - name: Upload benchmark results

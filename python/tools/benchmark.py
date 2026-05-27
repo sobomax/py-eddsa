@@ -5,6 +5,7 @@ import importlib.metadata
 import json
 import os
 import platform
+import random
 import statistics
 import time
 
@@ -13,6 +14,7 @@ import eddsa
 
 MIN_SECONDS = 0.2
 SAMPLES = 5
+RNG_SEED = 0xedd5a
 
 
 def measure(func):
@@ -43,9 +45,10 @@ def measure(func):
 
 
 def build_operations():
-    sec = bytes(range(32))
-    other_sec = bytes(reversed(range(32)))
-    msg = bytes((i * 13) & 0xff for i in range(256))
+    rng = random.Random(RNG_SEED)
+    sec = bytes(rng.randrange(256) for _ in range(32))
+    other_sec = bytes(rng.randrange(256) for _ in range(32))
+    msg = bytes(rng.randrange(256) for _ in range(256))
     pub = eddsa.ed25519_genpub(sec)
     sig = eddsa.ed25519_sign(sec, pub, msg)
     point = eddsa.x25519_base(other_sec)
@@ -88,12 +91,14 @@ def main():
     result = {
         "package": "py-eddsa",
         "package_version": importlib.metadata.version("py-eddsa"),
+        "api": "Python",
         "python_version": platform.python_version(),
         "python_implementation": platform.python_implementation(),
         "platform": platform.platform(),
         "target": args.target,
         "compiler": args.compiler,
         "wheel": args.wheel,
+        "runs": 1,
         "benchmarks": {},
     }
 
