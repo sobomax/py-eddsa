@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14-dev"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15-dev"]
         compiler: [gcc, clang]
         include:
           - os: macos
@@ -33,7 +33,10 @@ jobs:
             python-version: "3.13"
             compiler: clang
           - os: macos
-            python-version: "3.14-dev"
+            python-version: "3.14"
+            compiler: clang
+          - os: macos
+            python-version: "3.15-dev"
             compiler: clang
           - os: windows
             python-version: "3.11"
@@ -45,10 +48,13 @@ jobs:
             python-version: "3.13"
             compiler: msvc
           - os: windows
-            python-version: "3.14-dev"
+            python-version: "3.14"
             compiler: msvc
           - os: windows
             python-version: "3.13"
+            compiler: clang-cl
+          - os: windows
+            python-version: "3.14"
             compiler: clang-cl
 
     steps:
@@ -170,7 +176,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel python --output-dir dist
         env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-musllinux_*"
           CIBW_TEST_COMMAND: "python -c \"import eddsa; sec=bytes(range(32)); pub=eddsa.ed25519_genpub(sec); sig=eddsa.ed25519_sign(sec, pub, b'test'); assert eddsa.ed25519_verify(sig, pub, b'test')\""
 
@@ -231,4 +237,4 @@ jobs:
     needs: publish_all_wheels
     permissions:
       contents: write
-    uses: sippy/cimagic/.github/workflows/RollReleaseDraft.yml@v2
+    uses: sippy/cimagic/.github/workflows/RollReleaseDraft.yml@v3
