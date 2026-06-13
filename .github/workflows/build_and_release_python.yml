@@ -151,13 +151,38 @@ jobs:
         shell: bash
 
   build_wheels:
-    name: Build Wheels
+    name: Build Wheels (${{ matrix.artifact-suffix }})
     needs: build_test_python
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
+        include:
+          - os: ubuntu
+            artifact-suffix: linux-x86_64
+            cibw-archs-linux: x86_64
+          - os: ubuntu
+            artifact-suffix: linux-i686
+            cibw-archs-linux: i686
+          - os: ubuntu
+            artifact-suffix: linux-aarch64
+            cibw-archs-linux: aarch64
+          - os: ubuntu
+            artifact-suffix: linux-ppc64le
+            cibw-archs-linux: ppc64le
+          - os: ubuntu
+            artifact-suffix: linux-s390x
+            cibw-archs-linux: s390x
+          - os: ubuntu
+            artifact-suffix: linux-armv7l
+            cibw-archs-linux: armv7l
+          - os: ubuntu
+            artifact-suffix: linux-riscv64
+            cibw-archs-linux: riscv64
+          - os: macos
+            artifact-suffix: macos
+          - os: windows
+            artifact-suffix: windows
     permissions:
       contents: read
       packages: write
@@ -173,7 +198,23 @@ jobs:
       - name: Install cibuildwheel
         run: python -m pip install --upgrade cibuildwheel
 
+      - name: Set up QEMU
+        if: matrix.os == 'ubuntu' && matrix.cibw-archs-linux != 'x86_64' && matrix.cibw-archs-linux != 'i686'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build Linux wheels
+        if: matrix.os == 'ubuntu'
+        run: python -m cibuildwheel python --output-dir dist
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
+          CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
+          CIBW_SKIP: "*-musllinux_*"
+          CIBW_TEST_COMMAND: "python -c \"import eddsa; sec=bytes(range(32)); pub=eddsa.ed25519_genpub(sec); sig=eddsa.ed25519_sign(sec, pub, b'test'); assert eddsa.ed25519_verify(sig, pub, b'test')\""
+
       - name: Build wheels
+        if: matrix.os != 'ubuntu'
         run: python -m cibuildwheel python --output-dir dist
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
@@ -183,7 +224,7 @@ jobs:
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: dist-${{ matrix.os }}
+          name: dist-${{ matrix.artifact-suffix }}
           path: dist/*.whl
 
   publish_all_wheels:
