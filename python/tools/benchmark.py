@@ -89,8 +89,8 @@ def main():
     args = parser.parse_args()
 
     result = {
-        "package": "py-eddsa",
-        "package_version": importlib.metadata.version("py-eddsa"),
+        "package": "eddsa",
+        "package_version": importlib.metadata.version("eddsa"),
         "api": "Python",
         "python_version": platform.python_version(),
         "python_implementation": platform.python_implementation(),

@@ -21,7 +21,7 @@ from build_tools.RunCTest import RunCTest
 
 os.chdir(SETUP_DIR)
 
-PACKAGE_NAME = "py-eddsa"
+PACKAGE_NAME = "eddsa"
 
 is_win = get_platform().startswith("win")
 is_mac = get_platform().startswith("macosx-")

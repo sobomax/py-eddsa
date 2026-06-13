@@ -204,7 +204,7 @@ def main():
     }
 
     lines = [
-        "## py-eddsa benchmarks",
+        "## eddsa benchmarks",
         "",
         f"{len(python_results)} Python wheel runs and {len(results) - len(python_results)} C API runs benchmarked.",
         "",
