@@ -163,9 +163,10 @@ jobs:
           - os: ubuntu
             artifact-suffix: linux-x86_64
             cibw-archs-linux: x86_64
-          - os: ubuntu
-            artifact-suffix: linux-i686
-            cibw-archs-linux: i686
+          # linux-i686 temporarily disabled (wheel build failure, 2026-11-15):
+          # - os: ubuntu
+          #   artifact-suffix: linux-i686
+          #   cibw-archs-linux: i686
           - os: ubuntu
             artifact-suffix: linux-aarch64
             cibw-archs-linux: aarch64
