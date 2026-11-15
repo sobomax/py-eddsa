@@ -213,7 +213,7 @@ jobs:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_ARCHS_LINUX: ${{ matrix.cibw-archs-linux }}
           CIBW_SKIP: "*-musllinux_*"
-          CIBW_TEST_COMMAND: "python -c \"import eddsa; sec=bytes(range(32)); pub=eddsa.ed25519_genpub(sec); sig=eddsa.ed25519_sign(sec, pub, b'test'); assert eddsa.ed25519_verify(sig, pub, b'test')\""
+          CIBW_TEST_COMMAND: "python -I -m unittest discover -s {package}/tests -p \"test_*.py\""
 
       - name: Build wheels
         if: matrix.os != 'ubuntu'
@@ -221,7 +221,7 @@ jobs:
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*-musllinux_*"
-          CIBW_TEST_COMMAND: "python -c \"import eddsa; sec=bytes(range(32)); pub=eddsa.ed25519_genpub(sec); sig=eddsa.ed25519_sign(sec, pub, b'test'); assert eddsa.ed25519_verify(sig, pub, b'test')\""
+          CIBW_TEST_COMMAND: "python -I -m unittest discover -s {package}/tests -p \"test_*.py\""
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v7
