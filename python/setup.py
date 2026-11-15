@@ -38,12 +38,12 @@ def read_version():
     text = cmake_lists.read_text(encoding="utf-8")
 
     parts = {}
-    for name in ("MAJOR", "MINOR"):
+    for name in ("MAJOR", "MINOR", "PATCH"):
         match = re.search(rf"set\s*\(\s*EDDSA_VERSION_{name}\s+([0-9]+)\s*\)", text)
         if match is None:
             raise RuntimeError(f"EDDSA_VERSION_{name} not found in {cmake_lists}")
         parts[name] = match.group(1)
-    return f"{parts['MAJOR']}.{parts['MINOR']}.0"
+    return f"{parts['MAJOR']}.{parts['MINOR']}.{parts['PATCH']}"
 
 
 VERSION = read_version()
