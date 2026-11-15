@@ -133,13 +133,22 @@ do_x25519(uint8_t out[X25519_KEY_LEN],
 {
 	struct mg res, P;
 	uint8_t s[X25519_KEY_LEN];
+	uint8_t p[X25519_KEY_LEN];
 
 	memcpy(s, scalar, X25519_KEY_LEN);
 	s[0] &= 0xf8;
 	s[31] &= 0x7f;
 	s[31] |= 0x40;
- 	
-	fld_import(P.x, point);
+
+	/*
+	 * RFC 7748 section 5: implementations of X25519 MUST mask the
+	 * most significant bit in the final byte of the input u-coordinate.
+	 * Mask a local copy so the caller's buffer is not modified.
+	 */
+	memcpy(p, point, X25519_KEY_LEN);
+	p[31] &= 0x7f;
+
+	fld_import(P.x, p);
 	fld_set0(P.z, 1);
 	
 	mg_scale(&res, &P, s);
